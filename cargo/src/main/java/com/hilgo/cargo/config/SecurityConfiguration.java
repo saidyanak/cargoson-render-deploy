@@ -1,10 +1,9 @@
 package com.hilgo.cargo.config;
 
 import java.util.Arrays;
-import java.util.List;
 
-import org.springframework.context.annotation.Bean; // Bu satırı ekleyin
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration; // Bu satırı ekleyin
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -67,19 +66,21 @@ public class SecurityConfiguration {
         return http.build();
     }
 
-    @Bean
+@Bean
 public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     
-    // setAllowedOrigins yerine setAllowedOriginPatterns kullanarak daha esnek bir kural tanımlıyoruz.
-    // Bu, "http veya https ile başlayan herhangi bir kaynaktan gelen isteğe izin ver" demektir.
-    // Geliştirme aşamasındaki bu tür inatçı sorunları çözmek için en garantili yöntemdir.
-    configuration.setAllowedOriginPatterns(Arrays.asList("http://*", "https://*"));
+    // Frontend URL'nizi açıkça ekleyin
+    configuration.setAllowedOrigins(Arrays.asList(
+        "https://cargoson-frontendd.onrender.com",
+        "http://localhost:3000",
+        "http://localhost:8080"
+    ));
     
-    // Geri kalan ayarlarımız aynı kalıyor.
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-    configuration.setAllowedHeaders(List.of("*"));
+    configuration.setAllowedHeaders(Arrays.asList("*"));
     configuration.setAllowCredentials(true);
+    configuration.setMaxAge(3600L); // Preflight cache
     
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
