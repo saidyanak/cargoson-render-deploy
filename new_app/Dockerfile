@@ -1,6 +1,7 @@
 # --- AŞAMA 1: Flutter Web Uygulamasını Build Etme ---
-# Senin bilgisayarınla birebir aynı olan Flutter versiyonunu kullanıyoruz.
-FROM cirrusci/flutter:3.29.3 AS builder
+# Her zaman en güncel stabil Flutter versiyonunu temsil eden "stable" etiketini kullanıyoruz.
+# Bu, "image not found" hatasını çözer.
+FROM cirrusci/flutter:stable AS builder
 
 # Çalışma dizinini ayarlıyoruz.
 WORKDIR /app
