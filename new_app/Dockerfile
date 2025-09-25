@@ -1,17 +1,29 @@
-# --- AŞAMA 1: Flutter Web Uygulamasını Build Etme ---
-# Her zaman en güncel stabil Flutter versiyonunu temsil eden "stable" etiketini kullanıyoruz.
-# Bu, "image not found" hatasını çözer.
-FROM cirrusci/flutter:stable AS builder
+# --- AŞAMA 1: Gerekli Flutter Sürümünü Kur ve Build Et ---
+# Temiz bir Ubuntu 22.04 imajı ile başlıyoruz.
+FROM ubuntu:22.04 AS builder
+
+# Gerekli araçları kuruyoruz.
+RUN apt-get update && apt-get install -y git curl unzip xz-utils --no-install-recommends
 
 # Çalışma dizinini ayarlıyoruz.
-WORKDIR /app
+WORKDIR /flutter
 
-# Proje dosyalarını kopyalıyoruz.
-# pubspec.lock dosyası da kopyalanacağı için, Render tam olarak
-# senin bilgisayarında çalışan paket sürümlerini kullanacak.
+# Dart 3 içeren modern bir Flutter sürümünü indiriyoruz.
+# Not: Bu URL, Flutter'ın resmi indirme arşividir.
+RUN curl -fSL "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.19.6-stable.tar.xz" -o flutter.tar.xz
+RUN tar -xvf flutter.tar.xz
+RUN rm flutter.tar.xz
+ENV PATH="$PATH:/flutter/flutter/bin"
+
+# Flutter kurulumunu doğruluyoruz.
+RUN flutter doctor
+
+# Proje dosyalarını kopyalamak için yeni bir çalışma dizini oluşturuyoruz.
+WORKDIR /app
 COPY . .
 
-# Bu komut artık pubspec.lock sayesinde hatasız çalışacak.
+# pubspec.lock sayesinde bağımlılıkları yüklüyoruz.
+# Bu adım artık doğru Dart sürümüyle çalıştığı için başarılı olacak.
 RUN flutter pub get
 
 # Flutter web uygulamasını production için build ediyoruz.
