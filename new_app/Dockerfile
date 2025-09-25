@@ -1,46 +1,60 @@
-# --- AŞAMA 1: Gerekli Flutter Sürümünü Kur ve Build Et ---
-# Temiz bir Ubuntu 22.04 imajı ile başlıyoruz.
+# --- 1. Aşama: Build Aşaması ---
+# Resmi Ubuntu 22.04 imajını kullanıyoruz. Bu en güvenilir temeldir.
 FROM ubuntu:22.04 AS builder
 
-# Gerekli araçları ve SSL sertifikalarını kuruyoruz.
-# 'ca-certificates' paketi, curl'ün SSL hatası vermesini engeller.
-RUN apt-get update && apt-get install -y git curl unzip xz-utils ca-certificates --no-install-recommends
+# apt'nin interaktif soru sormasını engelle
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Çalışma dizinini ayarlıyoruz.
-WORKDIR /flutter
+# Gerekli araçları kuruyoruz ve cache temizliyoruz
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    unzip \
+    xz-utils \
+    libgtk-3-0 \
+    libgl1-mesa-glx \
+    ca-certificates \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
 
-# Dart 3 içeren modern bir Flutter sürümünü indiriyoruz.
-# Not: Bu URL, Flutter'ın resmi indirme arşividir.
-RUN curl -fSL "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.19.6-stable.tar.xz" -o flutter.tar.xz
-RUN tar -xvf flutter.tar.xz
-RUN rm flutter.tar.xz
-ENV PATH="$PATH:/flutter/flutter/bin"
+# Flutter'ın en son stabil versiyonunu resmi kaynağından indirip kuruyoruz
+WORKDIR /opt
+RUN git clone https://github.com/flutter/flutter.git --depth 1 --branch stable
+ENV PATH="$PATH:/opt/flutter/bin"
 
-# Git'in güvenlik hatasını çözerek Flutter'ın kendi versiyonunu doğru okumasını sağlıyoruz.
-# Bu komut, "dubious ownership" hatasını engeller.
-RUN git config --global --add safe.directory /flutter/flutter
+# Flutter web'i enable ediyoruz
+RUN flutter config --enable-web
 
-# Flutter kurulumunu doğruluyoruz.
+# Flutter'ı ön-derleme yaparak hızlandırıyoruz ve kurulumu doğruluyoruz
+RUN flutter precache
 RUN flutter doctor
 
-# Proje dosyalarını kopyalamak için yeni bir çalışma dizini oluşturuyoruz.
+# Proje dosyalarını kopyalıyoruz
 WORKDIR /app
-COPY . .
 
-# pubspec.lock sayesinde bağımlılıkları yüklüyoruz.
-# Bu adım artık doğru Dart sürümüyle çalıştığı için başarılı olacak.
+# Önce pubspec dosyalarını kopyala (Docker cache optimizasyonu için)
+COPY pubspec.yaml pubspec.lock* ./
+
+# Flutter bağımlılıklarını kuruyoruz
 RUN flutter pub get
 
-# Flutter web uygulamasını production için build ediyoruz.
-RUN flutter build web
+# Şimdi tüm proje dosyalarını kopyala
+COPY . .
 
-# --- AŞAMA 2: Nginx ile Sunma ---
-# Bu kısım aynı kalıyor.
+# Flutter web build'ini release modda oluşturuyoruz
+RUN flutter build web --release
+
+# --- 2. Aşama: Çalıştırma Aşaması ---
 FROM nginx:alpine
 
+# Build edilmiş dosyaları kopyala
 COPY --from=builder /app/build/web /usr/share/nginx/html
+
+# Nginx konfigürasyonunu kopyala
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Port 80'i aç
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
 
+# Nginx'i başlat
+CMD ["nginx", "-g", "daemon off;"]
