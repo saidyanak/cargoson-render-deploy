@@ -24,8 +24,8 @@ FROM nginx:alpine
 # Nginx'in varsayılan sunum dizinine kopyalıyoruz.
 COPY --from=builder /app/build/web /usr/share/nginx/html
 
-# Nginx'in SPA'lar (Flutter Web gibi) için doğru çalışmasını sağlayacak olan
-# özel konfigürasyon dosyamızı kopyalıyoruz. (Bu dosyanın projenizde olması gerekir)
+# Canvas'ta bulunan ve SPA'lar (Flutter Web gibi) için doğru çalışmayı sağlayacak olan
+# özel konfigürasyon dosyamızı kopyalıyoruz.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Nginx'in çalışacağı 80 portunu dışarıya açıyoruz.
