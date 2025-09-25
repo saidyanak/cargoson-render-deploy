@@ -70,11 +70,12 @@ COPY --from=builder /app/build/web /usr/share/nginx/html
 # Nginx konfigürasyonunu kopyala
 COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
-# Nginx'i PORT ile başlatacak script
-RUN echo '#!/bin/sh \n\
-envsubst "\$PORT" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf \n\
-nginx -g "daemon off;"' > /start.sh && \
-chmod +x /start.sh
+# envsubst için gettext paketini kur ve start script oluştur
+RUN apk add --no-cache gettext && \
+    echo '#!/bin/sh' > /start.sh && \
+    echo 'envsubst "\$PORT" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'nginx -g "daemon off;"' >> /start.sh && \
+    chmod +x /start.sh
 
 # Render'ın dinamik PORT'unu expose et
 EXPOSE $PORT
