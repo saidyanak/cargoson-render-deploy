@@ -1,60 +1,83 @@
 # --- 1. Aşama: Build Aşaması ---
-# Resmi Ubuntu 22.04 imajını kullanıyoruz. Bu en güvenilir temeldir.
 FROM ubuntu:22.04 AS builder
 
-# apt'nin interaktif soru sormasını engelle
+# Render ortamı için gerekli ayarlar
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="$PATH:/opt/flutter/bin"
 
-# Gerekli araçları kuruyoruz ve cache temizliyoruz
+# Gerekli araçları kuruyoruz
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     unzip \
     xz-utils \
-    libgtk-3-0 \
-    libgl1-mesa-glx \
     ca-certificates \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-# Flutter'ın en son stabil versiyonunu resmi kaynağından indirip kuruyoruz
-WORKDIR /opt
-RUN git clone https://github.com/flutter/flutter.git --depth 1 --branch stable
-ENV PATH="$PATH:/opt/flutter/bin"
+# Flutter kullanıcısı oluştur
+RUN useradd -m -s /bin/bash flutter
 
-# Flutter web'i enable ediyoruz
+# Flutter'ı flutter kullanıcısı olarak kur
+USER flutter
+WORKDIR /home/flutter
+
+# Flutter'ı git ile indir
+RUN git clone https://github.com/flutter/flutter.git --depth 1 --branch stable flutter
+
+# Flutter PATH'ini ayarla
+ENV PATH="$PATH:/home/flutter/flutter/bin"
+
+# Flutter web'i enable et
 RUN flutter config --enable-web
 
-# Flutter'ı ön-derleme yaparak hızlandırıyoruz ve kurulumu doğruluyoruz
-RUN flutter precache
+# Sadece web bileşenlerini precache et
+RUN flutter precache --web
+
+# Flutter doctor çalıştır
 RUN flutter doctor
 
-# Proje dosyalarını kopyalıyoruz
+# Root'a geç ve proje dosyalarını hazırla
+USER root
 WORKDIR /app
 
-# Önce pubspec dosyalarını kopyala (Docker cache optimizasyonu için)
+# pubspec dosyalarını kopyala
 COPY pubspec.yaml pubspec.lock* ./
+RUN chown -R flutter:flutter /app
 
-# Flutter bağımlılıklarını kuruyoruz
+# Flutter kullanıcısı olarak bağımlılıkları yükle
+USER flutter
 RUN flutter pub get
 
-# Şimdi tüm proje dosyalarını kopyala
+# Tüm proje dosyalarını kopyala
+USER root
 COPY . .
+RUN chown -R flutter:flutter /app
 
-# Flutter web build'ini release modda oluşturuyoruz
+# Flutter kullanıcısı olarak build et
+USER flutter
 RUN flutter build web --release
 
-# --- 2. Aşama: Çalıştırma Aşaması ---
+# --- 2. Aşama: Nginx ile Servis ---
 FROM nginx:alpine
+
+# Render'ın PORT environment variable'ını kullan
+ENV PORT=80
 
 # Build edilmiş dosyaları kopyala
 COPY --from=builder /app/build/web /usr/share/nginx/html
 
 # Nginx konfigürasyonunu kopyala
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
-# Port 80'i aç
-EXPOSE 80
+# Nginx'i PORT ile başlatacak script
+RUN echo '#!/bin/sh \n\
+envsubst "\$PORT" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf \n\
+nginx -g "daemon off;"' > /start.sh && \
+chmod +x /start.sh
 
-# Nginx'i başlat
-CMD ["nginx", "-g", "daemon off;"]
+# Render'ın dinamik PORT'unu expose et
+EXPOSE $PORT
+
+# Start script'i çalıştır
+CMD ["/start.sh"]

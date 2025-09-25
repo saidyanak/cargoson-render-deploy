@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: flutter-reeder
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    # Auto-deploy when you push to main branch
+    autoDeploy: true
+    # Health check endpoint (opsiyonel)
+    healthCheckPath: /
