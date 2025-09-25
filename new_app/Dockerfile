@@ -61,24 +61,23 @@ RUN flutter build web --release
 # --- 2. Aşama: Nginx ile Servis ---
 FROM nginx:alpine
 
-# Render'ın PORT environment variable'ını kullan
-ENV PORT=80
-
 # Build edilmiş dosyaları kopyala
 COPY --from=builder /app/build/web /usr/share/nginx/html
 
 # Nginx konfigürasyonunu kopyala
 COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
-# envsubst için gettext paketini kur ve start script oluştur
+# gettext paketini kur ve start script oluştur
 RUN apk add --no-cache gettext && \
-    echo '#!/bin/sh' > /start.sh && \
-    echo 'envsubst "\$PORT" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'nginx -g "daemon off;"' >> /start.sh && \
-    chmod +x /start.sh
+    echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'export PORT=${PORT:-10000}' >> /docker-entrypoint.sh && \
+    echo 'envsubst "\$PORT" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
+    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
 
-# Render'ın dinamik PORT'unu expose et
+# Render için port ayarı
+ENV PORT=10000
 EXPOSE $PORT
 
-# Start script'i çalıştır
-CMD ["/start.sh"]
+# Entrypoint script'i çalıştır
+ENTRYPOINT ["/docker-entrypoint.sh"]
