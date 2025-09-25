@@ -16,6 +16,10 @@ RUN tar -xvf flutter.tar.xz
 RUN rm flutter.tar.xz
 ENV PATH="$PATH:/flutter/flutter/bin"
 
+# Git'in güvenlik hatasını çözerek Flutter'ın kendi versiyonunu doğru okumasını sağlıyoruz.
+# Bu komut, "dubious ownership" hatasını engeller.
+RUN git config --global --add safe.directory /flutter/flutter
+
 # Flutter kurulumunu doğruluyoruz.
 RUN flutter doctor
 
