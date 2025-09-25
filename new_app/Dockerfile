@@ -2,8 +2,9 @@
 # Temiz bir Ubuntu 22.04 imajı ile başlıyoruz.
 FROM ubuntu:22.04 AS builder
 
-# Gerekli araçları kuruyoruz.
-RUN apt-get update && apt-get install -y git curl unzip xz-utils --no-install-recommends
+# Gerekli araçları ve SSL sertifikalarını kuruyoruz.
+# 'ca-certificates' paketi, curl'ün SSL hatası vermesini engeller.
+RUN apt-get update && apt-get install -y git curl unzip xz-utils ca-certificates --no-install-recommends
 
 # Çalışma dizinini ayarlıyoruz.
 WORKDIR /flutter
