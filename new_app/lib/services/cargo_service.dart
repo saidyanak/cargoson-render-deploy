@@ -8,7 +8,7 @@ import '../utils/cargo_helper.dart';
 
 class CargoService {
   // Backend URL - Swagger'dan alındı
-  static const String _baseUrl = 'http://rotax-new.ddns.net:8088';
+  static const String _baseUrl = 'https://cargoson-render-deploy.onrender.com';
   
   static final _secureStorage = FlutterSecureStorage();
 

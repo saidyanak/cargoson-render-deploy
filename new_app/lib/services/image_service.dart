@@ -8,7 +8,7 @@ import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 
 class ImageService {
-  static const String _baseUrl = 'http://rotax-new.ddns.net:8088';
+  static const String _baseUrl = 'https://cargoson-render-deploy.onrender.com';
   static final _picker = ImagePicker();
   static final _secureStorage = FlutterSecureStorage();
 

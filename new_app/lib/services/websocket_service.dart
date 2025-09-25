@@ -36,7 +36,7 @@ class WebSocketService {
       }
 
       // WebSocket bağlantısı
-      final wsUrl = 'ws:rotax-new.ddns.net:8088/ws?token=$token';
+      final wsUrl = 'ws:cargoson-render-deploy.onrender.com/ws?token=$token';
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       // Bağlantı durumunu dinle

@@ -7,7 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 
 class AuthService {
-  static const String baseUrl = 'http://rotax-new.ddns.net:8088';
+  static const String baseUrl = 'https://cargoson-render-deploy.onrender.com';
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
   static final GoogleSignIn _googleSignIn = GoogleSignIn();
   static final FirebaseAuth _auth = FirebaseAuth.instance;

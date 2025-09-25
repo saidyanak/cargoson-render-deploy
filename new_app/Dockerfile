@@ -1,33 +1,36 @@
-# --- 1. Aşama: Build Aşaması ---
-# Resmi Ubuntu 22.04 imajını kullanıyoruz. Bu en güvenilir temeldir.
-FROM ubuntu:22.04 AS builder
+# --- AŞAMA 1: Flutter Web Uygulamasını Build Etme ---
+# Flutter SDK'sının zaten kurulu olduğu, build için optimize edilmiş resmi bir imaj kullanıyoruz.
+# Bu, Ubuntu üzerine manuel kurulumdan çok daha hızlı ve güvenilirdir.
+FROM cirrusci/flutter:stable AS builder
 
-# apt'nin interaktif soru sormasını engelle
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Gerekli araçları (git, curl, unzip vb.) kuruyoruz
-RUN apt-get update && apt-get install -y git curl unzip xz-utils libgtk-3-0 libgl1-mesa-glx
-
-# Flutter'ın en son stabil versiyonunu resmi kaynağından indirip kuruyoruz
-WORKDIR /opt
-RUN git clone https://github.com/flutter/flutter.git --depth 1 --branch stable
-ENV PATH="$PATH:/opt/flutter/bin"
-
-# Flutter'ı ön-derleme yaparak hızlandırıyoruz ve kurulumu doğruluyoruz
-RUN flutter precache
-RUN flutter doctor
-
-# Proje dosyalarını kopyalıyoruz
+# Çalışma dizinini ayarlıyoruz.
 WORKDIR /app
+
+# Proje dosyalarını kopyalıyoruz.
 COPY . .
 
-# Flutter bağımlılıklarını kuruyoruz
+# Flutter bağımlılıklarını yüklüyoruz.
 RUN flutter pub get
 
-# Flutter web build'ini oluşturuyoruz
+# Flutter web uygulamasını production için build ediyoruz.
+# Bu komut, /app/build/web dizinini oluşturacak.
 RUN flutter build web
 
-# --- 2. Aşama: Çalıştırma Aşaması (Bu kısım aynı kalıyor) ---
+# --- AŞAMA 2: Nginx ile Sunma ---
+# Hafif bir Nginx imajı kullanıyoruz.
 FROM nginx:alpine
+
+# Build aşamasında oluşturulan statik dosyaları
+# Nginx'in varsayılan sunum dizinine kopyalıyoruz.
 COPY --from=builder /app/build/web /usr/share/nginx/html
+
+# Nginx'in SPA'lar (Flutter Web gibi) için doğru çalışmasını sağlayacak olan
+# özel konfigürasyon dosyamızı kopyalıyoruz. (Bu dosyanın projenizde olması gerekir)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Nginx'in çalışacağı 80 portunu dışarıya açıyoruz.
 EXPOSE 80
+
+# Container başladığında Nginx'i ön planda çalıştırıyoruz. Bu komut önemlidir.
+CMD ["nginx", "-g", "daemon off;"]
+
