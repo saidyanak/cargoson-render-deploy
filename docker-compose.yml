@@ -1,0 +1,63 @@
+services:
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_proxy
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - backend
+      - frontend
+
+  # MySQL Veritabanı
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: your_strong_password
+      MYSQL_DATABASE: Exercise1
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Backend (Spring Boot)
+  backend:
+    container_name: backend_app
+    build:
+      context: ./cargo
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/Exercise1?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: your_strong_password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      JWT_SECRET: kfN1Dw/4e58EeF+9eJYb8TxP9TDPDeeHKhktwvGuUrA=
+      GMAIL_APP_PASSWORD: aedyfyhwvkrdmekp
+    expose:
+      - "8080"
+
+  # Frontend (Flutter + Nginx)
+  frontend:
+    container_name: frontend_app
+    build:
+      context: ./new_app
+    restart: unless-stopped
+    depends_on:
+      - backend
+    expose:
+      - "80"
+
+volumes:
+  mysql-data:

@@ -1,0 +1,12 @@
+{
+  "name": "flutter-heroku",
+  "version": "1.0.0",
+  "description": "Flutter web app on Heroku",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
