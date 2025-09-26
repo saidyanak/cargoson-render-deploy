@@ -15,6 +15,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
@@ -64,9 +65,11 @@ public class Cargo {
 	private  String description;
 
 	@ManyToOne
+	@JoinColumn(name = "distributor_user_id", referencedColumnName = "user_id")
 	private Distributor distributor;
 	
 	@ManyToOne
+	@JoinColumn(name = "driver_user_id", referencedColumnName = "user_id")
 	private Driver driver;
 
 	@CreationTimestamp
